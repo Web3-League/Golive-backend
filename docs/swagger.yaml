@@ -1,0 +1,1736 @@
+basePath: /api
+definitions:
+  handlers.ActionResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  handlers.BanRequest:
+    properties:
+      reason:
+        type: string
+    type: object
+  handlers.BanResponse:
+    properties:
+      message:
+        type: string
+      reason:
+        type: string
+    type: object
+  handlers.BroadcastRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+    type: object
+  handlers.BroadcastResponse:
+    properties:
+      broadcast:
+        type: boolean
+      message_id:
+        type: string
+    type: object
+  handlers.ChannelAccessRequest:
+    properties:
+      user_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  handlers.ChannelListResponse:
+    properties:
+      channels:
+        items:
+          $ref: '#/definitions/realtime.ChannelInfo'
+        type: array
+      total:
+        type: integer
+    type: object
+  handlers.ChannelSettingsRequest:
+    properties:
+      allow_presence:
+        type: boolean
+      allow_publish:
+        type: boolean
+      allowed_roles:
+        items:
+          type: string
+        type: array
+      max_clients:
+        type: integer
+      max_history:
+        type: integer
+      private:
+        type: boolean
+      proxy_endpoint:
+        type: string
+      require_auth:
+        type: boolean
+      ttl_seconds:
+        type: integer
+    type: object
+  handlers.CreateStreamRequest:
+    properties:
+      category:
+        example: Gaming
+        maxLength: 50
+        type: string
+      description:
+        example: This is my streaming description
+        maxLength: 500
+        type: string
+      is_mature:
+        example: false
+        type: boolean
+      is_public:
+        example: true
+        type: boolean
+      language:
+        example: en
+        maxLength: 10
+        type: string
+      tags:
+        example:
+        - gaming
+        - live
+        - fun
+        items:
+          type: string
+        maxItems: 10
+        type: array
+      title:
+        example: My Awesome Stream
+        maxLength: 100
+        type: string
+    required:
+    - title
+    type: object
+  handlers.HistoryResponse:
+    properties:
+      channel:
+        type: string
+      limit:
+        type: integer
+      messages:
+        items:
+          $ref: '#/definitions/realtime.Message'
+        type: array
+      since:
+        type: string
+      total:
+        type: integer
+    type: object
+  handlers.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.PresenceResponse:
+    properties:
+      channel:
+        type: string
+      count:
+        type: integer
+      presence:
+        additionalProperties:
+          $ref: '#/definitions/realtime.PresenceInfo'
+        type: object
+    type: object
+  handlers.PresenceSyncRequest:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/realtime.PresenceInfo'
+        type: array
+    type: object
+  handlers.PublishRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+    type: object
+  handlers.PublishResponse:
+    properties:
+      message_id:
+        type: string
+      published:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  handlers.RPCRequest:
+    properties:
+      method:
+        type: string
+      params:
+        additionalProperties: true
+        type: object
+    type: object
+  handlers.RPCResponse:
+    properties:
+      error:
+        type: string
+      method:
+        type: string
+      result:
+        additionalProperties: true
+        type: object
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      confirm_password:
+        example: password123
+        type: string
+      display_name:
+        example: John Doe
+        maxLength: 50
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        minLength: 8
+        type: string
+      username:
+        example: johndoe
+        maxLength: 20
+        minLength: 3
+        type: string
+    required:
+    - confirm_password
+    - email
+    - password
+    - username
+    type: object
+  handlers.TimeoutRequest:
+    properties:
+      duration:
+        type: integer
+      reason:
+        type: string
+    type: object
+  handlers.TimeoutResponse:
+    properties:
+      duration:
+        type: integer
+      expires_at:
+        type: string
+      message:
+        type: string
+      reason:
+        type: string
+    type: object
+  handlers.UpdateStreamRequest:
+    properties:
+      category:
+        example: Art
+        maxLength: 50
+        type: string
+      description:
+        example: Updated description
+        maxLength: 500
+        type: string
+      is_mature:
+        example: true
+        type: boolean
+      is_public:
+        example: false
+        type: boolean
+      language:
+        example: fr
+        maxLength: 10
+        type: string
+      tags:
+        example:
+        - art
+        - creative
+        items:
+          type: string
+        maxItems: 10
+        type: array
+      title:
+        example: Updated Stream Title
+        maxLength: 100
+        type: string
+    type: object
+  realtime.ChannelInfo:
+    properties:
+      client_count:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: string
+      namespace:
+        type: string
+      settings:
+        $ref: '#/definitions/realtime.ChannelSettings'
+    type: object
+  realtime.ChannelSettings:
+    properties:
+      allow_presence:
+        type: boolean
+      allow_publish:
+        type: boolean
+      allowed_roles:
+        items:
+          type: string
+        type: array
+      max_clients:
+        type: integer
+      max_history:
+        type: integer
+      private:
+        type: boolean
+      proxy_endpoint:
+        type: string
+      require_auth:
+        type: boolean
+      ttl:
+        example: 3600000000000
+        format: int64
+        type: integer
+    type: object
+  realtime.Message:
+    properties:
+      channel:
+        type: string
+      data:
+        additionalProperties: true
+        type: object
+      id:
+        type: string
+      timestamp:
+        type: string
+      type:
+        $ref: '#/definitions/realtime.MessageType'
+      user:
+        $ref: '#/definitions/realtime.UserInfo'
+    type: object
+  realtime.MessageType:
+    enum:
+    - connect
+    - disconnect
+    - subscribe
+    - unsubscribe
+    - publish
+    - presence
+    - join
+    - leave
+    - chat
+    - system
+    - error
+    - ping
+    - pong
+    - rpc
+    type: string
+    x-enum-varnames:
+    - MessageTypeConnect
+    - MessageTypeDisconnect
+    - MessageTypeSubscribe
+    - MessageTypeUnsubscribe
+    - MessageTypePublish
+    - MessageTypePresence
+    - MessageTypeJoin
+    - MessageTypeLeave
+    - MessageTypeChat
+    - MessageTypeSystem
+    - MessageTypeError
+    - MessageTypePing
+    - MessageTypePong
+    - MessageTypeRPC
+  realtime.NamespaceStats:
+    properties:
+      channels:
+        type: integer
+      clients:
+        type: integer
+    type: object
+  realtime.PresenceInfo:
+    properties:
+      client_id:
+        type: string
+      joined_at:
+        type: string
+      last_seen:
+        type: string
+      user:
+        $ref: '#/definitions/realtime.UserInfo'
+    type: object
+  realtime.ServerStats:
+    properties:
+      last_updated:
+        type: string
+      namespace_stats:
+        additionalProperties:
+          $ref: '#/definitions/realtime.NamespaceStats'
+        type: object
+      total_channels:
+        type: integer
+      total_clients:
+        type: integer
+      uptime:
+        example: 3600000000000
+        format: int64
+        type: integer
+    type: object
+  realtime.UserInfo:
+    properties:
+      avatar:
+        type: string
+      display_name:
+        type: string
+      id:
+        type: string
+      role:
+        type: string
+      username:
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details:
+        additionalProperties: true
+        type: object
+      error:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Live streaming platform API with chat
+  title: GoLive API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and get JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Account deactivated
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User Login
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      description: Logout user and clear authentication cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: User Logout
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      description: Get current authenticated user information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User information
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Current User
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      description: Refresh JWT token using existing token from cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Account deactivated
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh JWT Token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registration successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Email or username already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User Registration
+      tags:
+      - Auth
+  /categories:
+    get:
+      description: Get list of available stream categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of categories
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List Stream Categories
+      tags:
+      - Streams
+  /endpoints:
+    get:
+      description: Get a comprehensive list of all available API endpoints
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all API endpoints with methods and descriptions
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List API Endpoints
+      tags:
+      - System
+  /health:
+    get:
+      description: Check the health status of the API and its dependencies
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API is healthy
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Service unavailable - Database or Redis unhealthy
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health Check
+      tags:
+      - System
+  /me/streams:
+    get:
+      description: Get list of streams for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User's streams
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Current User's Streams
+      tags:
+      - Streams
+    post:
+      consumes:
+      - application/json
+      description: Create a new stream for the authenticated user
+      parameters:
+      - description: Stream creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateStreamRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stream created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Authentication required
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: User already has an active stream
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create New Stream
+      tags:
+      - Streams
+  /me/streams/{key}:
+    delete:
+      description: Delete a stream (owner only)
+      parameters:
+      - description: Stream Key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Stream deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Stream key required
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not stream owner
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Stream not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Stream
+      tags:
+      - Streams
+    put:
+      consumes:
+      - application/json
+      description: Update stream information (owner only)
+      parameters:
+      - description: Stream Key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Stream update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateStreamRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stream updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error or no updates
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not stream owner
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Stream not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update Stream
+      tags:
+      - Streams
+  /me/streams/{key}/start:
+    post:
+      description: Start a stream (set it as live)
+      parameters:
+      - description: Stream Key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Stream started successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Stream key required
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Start Stream
+      tags:
+      - Streams
+  /me/streams/{key}/stop:
+    post:
+      description: Stop a stream (set it as offline)
+      parameters:
+      - description: Stream Key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Stream stopped successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Stream key required
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Stop Stream
+      tags:
+      - Streams
+  /metrics:
+    get:
+      description: Get system metrics and statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System metrics including user count, active streams, etc.
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: System Metrics
+      tags:
+      - System
+  /realtime/channels:
+    get:
+      description: Retourne la liste complète des channels en mémoire.
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ChannelListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lister les channels actifs
+      tags:
+      - Realtime
+  /realtime/channels/{channel}:
+    get:
+      description: Retourne la configuration et les statistiques instantanées du channel.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/realtime.ChannelInfo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Récupérer les informations d'un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/access:
+    post:
+      description: Ajoute une liste d'utilisateurs autorisés sur un channel privé.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: Liste des utilisateurs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ChannelAccessRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Autoriser l'accès à un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/access/{userID}:
+    delete:
+      description: Supprime l'accès d'un utilisateur à un channel privé.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: ID utilisateur
+        in: path
+        name: userID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Révoquer l'accès d'un utilisateur
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/broadcast:
+    post:
+      description: Envoie un message système à tous les clients abonnés.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: Payload système
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.BroadcastRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.BroadcastResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Diffuser un message système sur un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/clear:
+    post:
+      description: Efface l'historique d'un channel et avertit les clients.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ActionResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Vider un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/history:
+    get:
+      description: Retourne les derniers messages d'un channel temps réel.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: Nombre maximum de messages
+        in: query
+        maximum: 1000
+        name: limit
+        type: integer
+      - description: Identifiant du message à partir duquel récupérer
+        in: query
+        name: since
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HistoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Récupérer l'historique d'un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/messages/{messageID}:
+    delete:
+      description: Supprime un message spécifique et informe les clients connectés.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: Identifiant du message
+        in: path
+        name: messageID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ActionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Supprimer un message d'un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/presence:
+    get:
+      description: Retourne la liste des utilisateurs actuellement connectés sur le
+        channel.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PresenceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Récupérer la présence d'un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/presence/sync:
+    post:
+      description: Remplace la présence en mémoire par la liste fournie (usage déporté).
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: Liste de présence
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PresenceSyncRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Synchroniser la présence d'un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/publish:
+    post:
+      description: Publie un message pour tous les clients abonnés au channel spécifié.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: Payload du message
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PublishRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PublishResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Publier un message sur un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/settings:
+    put:
+      description: Ajuste les limites et règles d'accès d'un channel temps réel.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: Paramètres du channel
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ChannelSettingsRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/realtime.ChannelSettings'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Mettre à jour les paramètres d'un channel
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/users/{userID}/ban:
+    delete:
+      description: Retire un ban précédemment appliqué et notifie le channel.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: ID utilisateur ciblé
+        in: path
+        name: userID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ActionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Débannir un utilisateur
+      tags:
+      - Realtime
+    post:
+      description: Empêche définitivement un utilisateur de publier sur le channel.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: ID utilisateur ciblé
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Motif du ban
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.BanRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.BanResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Bannir un utilisateur
+      tags:
+      - Realtime
+  /realtime/channels/{channel}/users/{userID}/timeout:
+    post:
+      description: Applique un timeout temporaire sur un utilisateur pour le channel
+        cible.
+      parameters:
+      - description: Channel ID (namespace:identifiant)
+        in: path
+        name: channel
+        required: true
+        type: string
+      - description: ID utilisateur ciblé
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Paramètres du timeout
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.TimeoutRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TimeoutResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Timeout un utilisateur
+      tags:
+      - Realtime
+  /realtime/rpc:
+    post:
+      description: Exécute une méthode RPC exposée par le serveur realtime.
+      parameters:
+      - description: Requête RPC
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RPCRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.RPCResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Appeler un RPC realtime
+      tags:
+      - Realtime
+  /realtime/stats:
+    get:
+      description: Retourne des informations agrégées sur les channels et clients
+        connectés.
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/realtime.ServerStats'
+      security:
+      - BearerAuth: []
+      summary: Obtenir les statistiques du serveur realtime
+      tags:
+      - Realtime
+  /streams:
+    get:
+      description: Get list of public streams with pagination and filtering
+      parameters:
+      - default: 20
+        description: Number of streams to return (max 100)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of streams to skip
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      - description: Filter only live streams
+        in: query
+        name: live
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of streams with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List Public Streams
+      tags:
+      - Streams
+  /streams/{key}:
+    get:
+      description: Get specific stream information by stream key
+      parameters:
+      - description: Stream Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stream information
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Stream key required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Stream not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Stream by Key
+      tags:
+      - Streams
+  /streams/{key}/analytics:
+    get:
+      description: Get analytics data for a specific stream (not implemented yet)
+      parameters:
+      - description: Stream Key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Stream analytics
+          schema:
+            additionalProperties: true
+            type: object
+        "501":
+          description: Not implemented
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Stream Analytics
+      tags:
+      - Streams
+  /users/{userID}/follow:
+    delete:
+      description: Unfollow a user (Not implemented yet)
+      parameters:
+      - description: User ID to unfollow
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User unfollowed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "501":
+          description: Not implemented
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Unfollow User
+      tags:
+      - Users
+    post:
+      description: Follow another user (Not implemented yet)
+      parameters:
+      - description: User ID to follow
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User followed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "501":
+          description: Not implemented
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Follow User
+      tags:
+      - Users
+  /users/me:
+    delete:
+      description: Delete the currently authenticated user's account (Not implemented
+        yet)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "501":
+          description: Not implemented
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Current User Account
+      tags:
+      - Users
+    get:
+      description: Get the profile information of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile information
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Current User Profile
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update the profile information of the currently authenticated user
+        (Not implemented yet)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "501":
+          description: Not implemented
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update Current User Profile
+      tags:
+      - Users
+  /users/me/followers:
+    get:
+      description: Get list of users that are following the current user (Not implemented
+        yet)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of followers
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "501":
+          description: Not implemented
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Followers List
+      tags:
+      - Users
+  /users/me/following:
+    get:
+      description: Get list of users that the current user is following (Not implemented
+        yet)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of followed users
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "501":
+          description: Not implemented
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Following List
+      tags:
+      - Users
+  /users/me/streams:
+    get:
+      description: Get all streams belonging to the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of user's streams
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Current User's Streams
+      tags:
+      - Users
+  /ws:
+    get:
+      description: Etablit une connexion WebSocket pour le serveur temps réel. L'authentification
+        par jeton est optionnelle.
+      parameters:
+      - description: Bearer <token>
+        in: header
+        name: Authorization
+        type: string
+      responses:
+        "101":
+          description: Connexion WebSocket acceptée
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Realtime WebSocket connection
+      tags:
+      - Realtime
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

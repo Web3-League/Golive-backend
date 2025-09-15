@@ -1,0 +1,37 @@
+# MediaMTX configuration minimale pour GoLive
+
+paths:
+  live:
+    source: publisher
+    # Active HLS pour lecture côté navigateur
+    hls:
+      enable: yes
+      segmentCount: 3
+      segmentDuration: 2s
+    # Active DASH si besoin
+    dash:
+      enable: yes
+      segmentCount: 3
+      segmentDuration: 2s
+    # Hook d'authentification optionnel vers l'API back-office
+    publishUser: "${STREAM_KEY_USER}"
+    publishPass: "${STREAM_KEY_PASS}"
+
+rtmp:
+  enable: yes
+  listenAddress: :1935
+
+rtsp:
+  enable: no
+
+hls:
+  enable: yes
+  listenAddress: :8888
+
+dash:
+  enable: yes
+  listenAddress: :8890
+
+api:
+  enable: yes
+  address: :9997

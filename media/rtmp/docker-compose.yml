@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: golive-mediamtx
+    ports:
+      - "1935:1935"   # RTMP
+      - "8888:8888"   # HLS
+      - "8890:8890"   # DASH
+      - "9997:9997"   # API MediaMTX
+    environment:
+      STREAM_KEY_USER: ${STREAM_KEY_USER:-golive}
+      STREAM_KEY_PASS: ${STREAM_KEY_PASS:-change-me}
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    command: ["/mediamtx", "/mediamtx.yml"]
+    restart: unless-stopped

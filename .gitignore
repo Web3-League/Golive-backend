@@ -1,0 +1,13 @@
+# Secrets et configs locales
+.env
+.env.*
+config/*.yaml   # si tu maîtrises des fichiers perso
+*.key
+*.pem
+
+# Build et caches
+.gocache/
+dist/
+node_modules/
+
+chat_client.js
