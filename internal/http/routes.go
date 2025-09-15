@@ -163,6 +163,7 @@ func (s *Server) setupStreamRoutes(r chi.Router) {
 		})
 		r.Post("/{key}/start", s.Streams.HandleStartStream)
 		r.Post("/{key}/stop", s.Streams.HandleStopStream)
+		r.Post("/{key}/rotate", s.Streams.HandleRotateIngestKey)
 	})
 }
 

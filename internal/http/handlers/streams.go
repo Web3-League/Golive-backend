@@ -2,8 +2,11 @@
 package handlers
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,6 +17,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 
 	"golive/internal/chat"
 	"golive/internal/config"
@@ -28,6 +32,22 @@ type StreamsHandler struct {
 	Logger   *logger.Logger
 	Validate *validator.Validate
 	ChatHubs map[string]*chat.Hub
+}
+
+func generateStreamKey() (string, error) {
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(buf), nil
+}
+
+func hashIngestKey(key string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(key), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }
 
 // === DTOs (centralisés ici pour éviter les doublons) ===
@@ -463,7 +483,28 @@ func (h *StreamsHandler) HandleCreateStream(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	streamKey := fmt.Sprintf("%s_%d", userID[:8], time.Now().Unix())
+	streamKey, err := generateStreamKey()
+	if err != nil {
+		h.Logger.Error("Failed to generate stream key", "error", err)
+		response.Error(w, "Failed to create stream", http.StatusInternalServerError)
+		return
+	}
+	ingestKey, err := generateStreamKey()
+	if err != nil {
+		h.Logger.Error("Failed to generate ingest key", "error", err)
+		response.Error(w, "Failed to create stream", http.StatusInternalServerError)
+		return
+	}
+	ingestHash, err := hashIngestKey(ingestKey)
+	if err != nil {
+		h.Logger.Error("Failed to hash ingest key", "error", err)
+		response.Error(w, "Failed to create stream", http.StatusInternalServerError)
+		return
+	}
+	ingestHint := ""
+	if len(ingestKey) >= 4 {
+		ingestHint = ingestKey[len(ingestKey)-4:]
+	}
 
 	isPublic := true
 	if req.IsPublic != nil {
@@ -475,11 +516,11 @@ func (h *StreamsHandler) HandleCreateStream(w http.ResponseWriter, r *http.Reque
 	}
 
 	var streamID string
-	err := h.DB.QueryRow(ctx, `
-		INSERT INTO streams (user_id, key, title, description, category, language, tags, is_public, is_mature)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	err = h.DB.QueryRow(ctx, `
+		INSERT INTO streams (user_id, key, title, description, category, language, tags, is_public, is_mature, ingest_key_hash, ingest_key_hint)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id
-	`, userID, streamKey, req.Title, req.Description, req.Category, req.Language, req.Tags, isPublic, isMature).Scan(&streamID)
+	`, userID, streamKey, req.Title, req.Description, req.Category, req.Language, req.Tags, isPublic, isMature, ingestHash, ingestHint).Scan(&streamID)
 	if err != nil {
 		h.Logger.Error("Failed to create stream", "error", err)
 		response.Error(w, "Failed to create stream", http.StatusInternalServerError)
@@ -500,6 +541,8 @@ func (h *StreamsHandler) HandleCreateStream(w http.ResponseWriter, r *http.Reque
 		"is_mature":   isMature,
 		"rtmp_url":    fmt.Sprintf("rtmp://localhost:%d", 1935),
 		"stream_key":  streamKey,
+		"ingest_key":  ingestKey,
+		"ingest_hint": ingestHint,
 		"hls_url":     fmt.Sprintf("%s/%s/index.m3u8", h.Config.MediaMTX.HLSBaseURL, streamKey),
 	})
 }
@@ -740,13 +783,34 @@ func (h *StreamsHandler) HandleStartStream(w http.ResponseWriter, r *http.Reques
 
 	ctx := r.Context()
 
-	if _, err := h.DB.Exec(ctx, `
+	var ownerID string
+	if err := h.DB.QueryRow(ctx, "SELECT user_id FROM streams WHERE key = $1", streamKey).Scan(&ownerID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			response.Error(w, "Stream not found", http.StatusNotFound)
+			return
+		}
+		h.Logger.Error("Failed to load stream owner", "stream_key", streamKey, "error", err)
+		response.Error(w, "Failed to start stream", http.StatusInternalServerError)
+		return
+	}
+	if ownerID != userID {
+		response.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	commandTag, err := h.DB.Exec(ctx, `
 		UPDATE streams 
 		SET is_live = true, started_at = now(), updated_at = now()
 		WHERE key = $1 AND user_id = $2
-	`, streamKey, userID); err != nil {
+	`, streamKey, userID)
+	if err != nil {
 		h.Logger.Error("Failed to start stream", "error", err)
 		response.Error(w, "Failed to start stream", http.StatusInternalServerError)
+		return
+	}
+	if commandTag.RowsAffected() == 0 {
+		h.Logger.Warn("Start stream had no effect", "stream_key", streamKey, "user_id", userID)
+		response.Error(w, "Stream not found", http.StatusNotFound)
 		return
 	}
 
@@ -782,13 +846,34 @@ func (h *StreamsHandler) HandleStopStream(w http.ResponseWriter, r *http.Request
 
 	ctx := r.Context()
 
-	if _, err := h.DB.Exec(ctx, `
+	var ownerID string
+	if err := h.DB.QueryRow(ctx, "SELECT user_id FROM streams WHERE key = $1", streamKey).Scan(&ownerID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			response.Error(w, "Stream not found", http.StatusNotFound)
+			return
+		}
+		h.Logger.Error("Failed to load stream owner", "stream_key", streamKey, "error", err)
+		response.Error(w, "Failed to stop stream", http.StatusInternalServerError)
+		return
+	}
+	if ownerID != userID {
+		response.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	commandTag, err := h.DB.Exec(ctx, `
 		UPDATE streams 
 		SET is_live = false, current_viewers = 0, updated_at = now()
 		WHERE key = $1 AND user_id = $2
-	`, streamKey, userID); err != nil {
+	`, streamKey, userID)
+	if err != nil {
 		h.Logger.Error("Failed to stop stream", "error", err)
 		response.Error(w, "Failed to stop stream", http.StatusInternalServerError)
+		return
+	}
+	if commandTag.RowsAffected() == 0 {
+		h.Logger.Warn("Stop stream had no effect", "stream_key", streamKey, "user_id", userID)
+		response.Error(w, "Stream not found", http.StatusNotFound)
 		return
 	}
 
@@ -805,6 +890,80 @@ func (h *StreamsHandler) HandleStopStream(w http.ResponseWriter, r *http.Request
 		"message": "Stream stopped",
 		"key":     streamKey,
 		"status":  "offline",
+	})
+}
+
+// =============================================================================
+// ROTATE INGEST KEY
+// =============================================================================
+
+// @Summary Rotate Ingest Key
+// @Description Generate a new ingest key for the stream (owner only)
+// @Tags Streams
+// @Security BearerAuth
+// @Param key path string true "Stream Key"
+// @Success 200 {object} map[string]interface{} "New ingest key returned"
+// @Failure 400 {object} map[string]interface{} "Stream key required"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 404 {object} map[string]interface{} "Stream not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /me/streams/{key}/rotate [post]
+func (h *StreamsHandler) HandleRotateIngestKey(w http.ResponseWriter, r *http.Request) {
+	streamKey := chi.URLParam(r, "key")
+	if streamKey == "" {
+		response.Error(w, "Stream key required", http.StatusBadRequest)
+		return
+	}
+	userID := mw.GetUserID(r.Context())
+	if userID == "" {
+		response.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	ingestKey, err := generateStreamKey()
+	if err != nil {
+		h.Logger.Error("Failed to generate ingest key", "error", err)
+		response.Error(w, "Failed to rotate ingest key", http.StatusInternalServerError)
+		return
+	}
+	ingestHash, err := hashIngestKey(ingestKey)
+	if err != nil {
+		h.Logger.Error("Failed to hash ingest key", "error", err)
+		response.Error(w, "Failed to rotate ingest key", http.StatusInternalServerError)
+		return
+	}
+	ingestHint := ""
+	if len(ingestKey) >= 4 {
+		ingestHint = ingestKey[len(ingestKey)-4:]
+	}
+
+	ctx := r.Context()
+	var streamID string
+	err = h.DB.QueryRow(ctx, `
+		UPDATE streams
+		SET ingest_key_hash = $1, ingest_key_hint = $2, updated_at = now()
+		WHERE key = $3 AND user_id = $4
+		RETURNING id
+	`, ingestHash, ingestHint, streamKey, userID).Scan(&streamID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			response.Error(w, "Stream not found", http.StatusNotFound)
+		} else {
+			h.Logger.Error("Failed to rotate ingest key", "stream_key", streamKey, "error", err)
+			response.Error(w, "Failed to rotate ingest key", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	h.Logger.Info("Ingest key rotated", "stream_key", streamKey, "user_id", userID)
+	response.JSON(w, map[string]interface{}{
+		"message":     "Ingest key rotated",
+		"key":         streamKey,
+		"ingest_key":  ingestKey,
+		"ingest_hint": ingestHint,
+		"stream_id":   streamID,
+		"rotated_at":  time.Now().UTC(),
 	})
 }
 

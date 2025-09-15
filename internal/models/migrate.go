@@ -4,34 +4,48 @@ package models
 import (
 	"context"
 	"embed"
+	"fmt"
+	"io/fs"
+	"sort"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-//go:embed models.sql
-var schema embed.FS
+//go:embed migrations/*.sql
+var migrations embed.FS
 
 // Migrate runs database migrations
 func Migrate(ctx context.Context, db *pgxpool.Pool) error {
-	// Read SQL file
-	sqlContent, err := schema.ReadFile("models.sql")
+	entries, err := fs.ReadDir(migrations, "migrations")
 	if err != nil {
 		return err
 	}
 
-	// Split into individual statements
-	statements := strings.Split(string(sqlContent), ";\n")
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Name() < entries[j].Name()
+	})
 
-	// Execute each statement
-	for _, stmt := range statements {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
+	for _, entry := range entries {
+		if entry.IsDir() {
 			continue
 		}
 
-		if _, err := db.Exec(ctx, stmt); err != nil {
-			return err
+		content, err := migrations.ReadFile("migrations/" + entry.Name())
+		if err != nil {
+			return fmt.Errorf("read migration %s: %w", entry.Name(), err)
+		}
+
+		statements := strings.Split(string(content), ";")
+		for _, stmt := range statements {
+			statement := strings.TrimSpace(stmt)
+			if statement == "" {
+				continue
+			}
+
+			if _, err := db.Exec(ctx, statement); err != nil {
+				return fmt.Errorf("apply migration %s: %w", entry.Name(), err)
+			}
 		}
 	}
 

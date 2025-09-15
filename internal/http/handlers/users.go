@@ -97,7 +97,7 @@ func (h *UsersHandler) HandleGetUserStreams(w http.ResponseWriter, r *http.Reque
 	rows, err := h.DB.Query(ctx, `
 		SELECT id, key, title, description, category, language, tags, 
 		       is_public, is_mature, is_live, current_viewers, 
-		       started_at, created_at, updated_at
+		       started_at, created_at, updated_at, ingest_key_hint
 		FROM streams 
 		WHERE user_id = $1 
 		ORDER BY created_at DESC
@@ -128,13 +128,14 @@ func (h *UsersHandler) HandleGetUserStreams(w http.ResponseWriter, r *http.Reque
 			StartedAt      *time.Time `json:"started_at"`
 			CreatedAt      time.Time  `json:"created_at"`
 			UpdatedAt      time.Time  `json:"updated_at"`
+			IngestHint     *string    `json:"ingest_hint"`
 		}
 
 		err := rows.Scan(
 			&stream.ID, &stream.Key, &stream.Title, &stream.Description,
 			&stream.Category, &stream.Language, &stream.Tags,
 			&stream.IsPublic, &stream.IsMature, &stream.IsLive,
-			&stream.CurrentViewers, &stream.StartedAt, &stream.CreatedAt, &stream.UpdatedAt,
+			&stream.CurrentViewers, &stream.StartedAt, &stream.CreatedAt, &stream.UpdatedAt, &stream.IngestHint,
 		)
 
 		if err != nil {
@@ -166,6 +167,9 @@ func (h *UsersHandler) HandleGetUserStreams(w http.ResponseWriter, r *http.Reque
 		}
 		streamData["rtmp_url"] = fmt.Sprintf("rtmp://localhost:%d", 1935)
 		streamData["stream_key"] = stream.Key
+		if stream.IngestHint != nil {
+			streamData["ingest_hint"] = *stream.IngestHint
+		}
 
 		streams = append(streams, streamData)
 	}

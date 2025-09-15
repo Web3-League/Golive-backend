@@ -556,31 +556,6 @@ func (s *RealtimeServer) saveMessage(message *Message) {
 		return
 	}
 
-	streamKey := parts[1]
-	if s.db != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		// Récupérer l'ID du stream
-		var streamID string
-		err := s.db.QueryRow(ctx, "SELECT id FROM streams WHERE key = $1", streamKey).Scan(&streamID)
-		if err != nil {
-			s.logger.Error("Failed to find stream for chat message", "stream_key", streamKey, "error", err)
-			return
-		}
-
-		// Sauvegarder le message
-		content, _ := json.Marshal(message.Data)
-		_, err = s.db.Exec(ctx, `
-			INSERT INTO chat_messages (stream_id, user_id, content, username, display_name, created_at)
-			VALUES ($1, $2, $3, $4, $5, $6)
-		`, streamID, message.User.ID, string(content), message.User.Username, message.User.DisplayName, message.Timestamp)
-
-		if err != nil {
-			s.logger.Error("Failed to save chat message", "error", err)
-		}
-	}
-
 	if s.redisManager != nil {
 		if err := s.redisManager.SaveMessage(context.Background(), message.Channel, message); err != nil {
 			s.logger.Error("Failed to cache chat message", "error", err, "channel", message.Channel)

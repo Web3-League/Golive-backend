@@ -50,47 +50,47 @@ type Message struct {
 
 // Client represents a connected WebSocket client
 type Client struct {
-	ID        string
-	Conn      *websocket.Conn
-	Hub       *Hub
-	Send      chan []byte
-	UserID    *string
-	Username  string
-	IsStreamer bool
+	ID          string
+	Conn        *websocket.Conn
+	Hub         *Hub
+	Send        chan []byte
+	UserID      *string
+	Username    string
+	IsStreamer  bool
 	IsModerator bool
-	LastSeen  time.Time
-	mu        sync.RWMutex
+	LastSeen    time.Time
+	mu          sync.RWMutex
 }
 
 // Hub maintains the set of active clients and broadcasts messages
 type Hub struct {
 	StreamKey string
-	
+
 	// Registered clients
 	clients map[*Client]bool
-	
+
 	// Inbound messages from clients
 	broadcast chan []byte
-	
+
 	// Register requests from clients
 	register chan *Client
-	
+
 	// Unregister requests from clients
 	unregister chan *Client
-	
+
 	// Chat settings
 	settings *ChatSettings
-	
+
 	// Dependencies
 	db     *pgxpool.Pool
 	rdb    *redis.Client
 	logger *logger.Logger
-	
+
 	// Shutdown
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
-	
+
 	mu sync.RWMutex
 }
 
@@ -108,7 +108,7 @@ type ChatSettings struct {
 // NewHub creates a new chat hub
 func NewHub(streamKey string, db *pgxpool.Pool, rdb *redis.Client, logger *logger.Logger) *Hub {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	return &Hub{
 		StreamKey:  streamKey,
 		clients:    make(map[*Client]bool),
@@ -136,20 +136,20 @@ func NewHub(streamKey string, db *pgxpool.Pool, rdb *redis.Client, logger *logge
 func (h *Hub) Run() {
 	h.wg.Add(1)
 	defer h.wg.Done()
-	
+
 	h.logger.Info("Starting chat hub", "stream_key", h.StreamKey)
-	
+
 	for {
 		select {
 		case client := <-h.register:
 			h.registerClient(client)
-			
+
 		case client := <-h.unregister:
 			h.unregisterClient(client)
-			
+
 		case message := <-h.broadcast:
 			h.broadcastMessage(message)
-			
+
 		case <-h.ctx.Done():
 			h.logger.Info("Shutting down chat hub", "stream_key", h.StreamKey)
 			return
@@ -191,7 +191,7 @@ func (h *Hub) SendSystemMessage(content string) {
 		DisplayName: "System",
 		Timestamp:   time.Now(),
 	}
-	
+
 	if data, err := json.Marshal(msg); err == nil {
 		h.BroadcastMessage(data)
 	}
@@ -216,7 +216,7 @@ func (h *Hub) UpdateSettings(settings *ChatSettings) {
 	h.mu.Lock()
 	h.settings = settings
 	h.mu.Unlock()
-	
+
 	// Broadcast settings update
 	h.SendSystemMessage("Chat settings updated")
 }
@@ -225,7 +225,7 @@ func (h *Hub) UpdateSettings(settings *ChatSettings) {
 func (h *Hub) Close() {
 	h.cancel()
 	h.wg.Wait()
-	
+
 	// Close all client connections
 	h.mu.Lock()
 	for client := range h.clients {
@@ -241,13 +241,13 @@ func (h *Hub) registerClient(client *Client) {
 	h.mu.Lock()
 	h.clients[client] = true
 	h.mu.Unlock()
-	
-	h.logger.Info("Client connected", 
+
+	h.logger.Info("Client connected",
 		"stream_key", h.StreamKey,
 		"client_id", client.ID,
 		"username", client.Username,
 		"total_clients", len(h.clients))
-	
+
 	// Send join message
 	if client.Username != "" {
 		msg := &Message{
@@ -259,12 +259,12 @@ func (h *Hub) registerClient(client *Client) {
 			UserID:      client.UserID,
 			Timestamp:   time.Now(),
 		}
-		
+
 		if data, err := json.Marshal(msg); err == nil {
 			h.BroadcastMessage(data)
 		}
 	}
-	
+
 	// Send current viewer count
 	h.updateViewerCount()
 }
@@ -276,13 +276,13 @@ func (h *Hub) unregisterClient(client *Client) {
 		close(client.Send)
 	}
 	h.mu.Unlock()
-	
+
 	h.logger.Info("Client disconnected",
 		"stream_key", h.StreamKey,
 		"client_id", client.ID,
 		"username", client.Username,
 		"total_clients", len(h.clients))
-	
+
 	// Send leave message
 	if client.Username != "" {
 		msg := &Message{
@@ -294,12 +294,12 @@ func (h *Hub) unregisterClient(client *Client) {
 			UserID:      client.UserID,
 			Timestamp:   time.Now(),
 		}
-		
+
 		if data, err := json.Marshal(msg); err == nil {
 			h.BroadcastMessage(data)
 		}
 	}
-	
+
 	// Update viewer count
 	h.updateViewerCount()
 }
@@ -307,7 +307,7 @@ func (h *Hub) unregisterClient(client *Client) {
 func (h *Hub) broadcastMessage(message []byte) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	
+
 	for client := range h.clients {
 		select {
 		case client.Send <- message:
@@ -323,9 +323,9 @@ func (h *Hub) updateViewerCount() {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		
+
 		viewerCount := h.GetClientCount()
-		_, err := h.db.Exec(ctx, 
+		_, err := h.db.Exec(ctx,
 			"UPDATE streams SET current_viewers = $1 WHERE key = $2",
 			viewerCount, h.StreamKey)
 		if err != nil {
@@ -355,14 +355,14 @@ func (c *Client) ReadPump() {
 		c.Hub.UnregisterClient(c)
 		c.Conn.Close()
 	}()
-	
+
 	c.Conn.SetReadLimit(512)
 	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.Conn.SetPongHandler(func(string) error {
 		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
-	
+
 	for {
 		_, messageData, err := c.Conn.ReadMessage()
 		if err != nil {
@@ -371,17 +371,17 @@ func (c *Client) ReadPump() {
 			}
 			break
 		}
-		
+
 		// Parse message
 		var incomingMsg struct {
 			Type    MessageType `json:"type"`
 			Content string      `json:"content"`
 		}
-		
+
 		if err := json.Unmarshal(messageData, &incomingMsg); err != nil {
 			continue
 		}
-		
+
 		// Process message
 		c.processMessage(incomingMsg.Type, incomingMsg.Content)
 	}
@@ -394,7 +394,7 @@ func (c *Client) WritePump() {
 		ticker.Stop()
 		c.Conn.Close()
 	}()
-	
+
 	for {
 		select {
 		case message, ok := <-c.Send:
@@ -403,24 +403,24 @@ func (c *Client) WritePump() {
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			
+
 			w, err := c.Conn.NextWriter(websocket.TextMessage)
 			if err != nil {
 				return
 			}
 			w.Write(message)
-			
+
 			// Add queued messages
 			n := len(c.Send)
 			for i := 0; i < n; i++ {
 				w.Write([]byte{'\n'})
 				w.Write(<-c.Send)
 			}
-			
+
 			if err := w.Close(); err != nil {
 				return
 			}
-			
+
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
@@ -437,12 +437,12 @@ func (c *Client) processMessage(msgType MessageType, content string) {
 	if !settings.Enabled {
 		return
 	}
-	
+
 	// Validate message length
 	if len(content) > settings.MaxMessageLength {
 		return
 	}
-	
+
 	// Create message
 	msg := &Message{
 		StreamKey:   c.Hub.StreamKey,
@@ -453,10 +453,10 @@ func (c *Client) processMessage(msgType MessageType, content string) {
 		DisplayName: c.Username,
 		Timestamp:   time.Now(),
 	}
-	
+
 	// Save to database
 	go c.saveMessage(msg)
-	
+
 	// Broadcast to all clients
 	if data, err := json.Marshal(msg); err == nil {
 		c.Hub.BroadcastMessage(data)
@@ -465,18 +465,8 @@ func (c *Client) processMessage(msgType MessageType, content string) {
 
 // saveMessage saves message to database
 func (c *Client) saveMessage(msg *Message) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	
-	_, err := c.Hub.db.Exec(ctx, `
-		INSERT INTO chat_messages (stream_id, user_id, content, message_type, username, display_name, created_at)
-		SELECT s.id, $1, $2, $3, $4, $5, $6
-		FROM streams s WHERE s.key = $7
-	`, msg.UserID, msg.Content, string(msg.Type), msg.Username, msg.DisplayName, msg.Timestamp, c.Hub.StreamKey)
-	
-	if err != nil {
-		c.Hub.logger.Error("Failed to save chat message", "error", err)
-	}
+	// Persistence disabled: chat history lives in memory/redis only.
+	_ = msg
 }
 
 // Helper functions
