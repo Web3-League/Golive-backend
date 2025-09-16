@@ -1,6 +1,6 @@
 # GoLive Platform – Chat Temps Réel & Streaming
 
-GoLive est une plateforme légère en Go qui combine un serveur de chat temps réel inspiré de Centrifugo avec une stack de streaming RTMP/HLS. L'état du chat est maintenu en mémoire par défaut (redémarrage = reset), avec la possibilité de charger une configuration YAML et d'exposer des endpoints d'administration.
+GoLive est une plateforme légère en Go qui combine un serveur de chat temps réel avec une stack de streaming RTMP/HLS. L'état du chat est maintenu en mémoire par défaut (redémarrage = reset), avec la possibilité de charger une configuration YAML et d'exposer des endpoints d'administration.
 
 ## 🚀 Fonctionnalités
 
